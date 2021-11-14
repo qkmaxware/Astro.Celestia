@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <PackageId>Qkmaxware.Astro.Celestia</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Colin Halseth</Authors>
+    <PackageTags>astronomical;coodinate;reference frame</PackageTags>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+    <RepositoryUrl>https://github.com/qkmaxware/Astro.Celestia.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageDescription>
+      Qkmaxware.Astro.Celestia contains a catalogue of stars, deep sky objects, and planets.
+    </PackageDescription>
+    <PackageOutputPath>./nupkg</PackageOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE.md" CopyToOutputDirectory="Always" Pack="true" PackagePath="$(PackageLicenseFile)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Qkmaxware.Astro.Coordinates" Version="1.0.0" />
+  </ItemGroup>
+
+</Project>
