@@ -1,4 +1,9 @@
 bin/
 obj/
 
+# Do not include unziped raw data as these files are too large
+Astro.Celestia.Generator/data/heasarc/*
+!Astro.Celestia.Generator/data/heasarc/*.zip
+!Astro.Celestia.Generator/data/heasarc/*.md
+
 *.nupkg

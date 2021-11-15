@@ -205,78 +205,39 @@ namespace Astro.Celestia.Generator {
             }
             Console.WriteLine(" Done");
             // Write out file
-            Console.Write("[Hipparcos] Emitting class...");
             var uniqueCatalogueName = "Hipparcos";
-            using (var writer = new StreamWriter(Path.Combine(outputPath, "Stars", $"Star.Catalogue.{uniqueCatalogueName}.cs"))) {
-                // Header
-                writer.WriteLine(
-@"using System;
-using System.Linq;
-using System.Collections.Generic;
-using Qkmaxware.Astro.Coordinates;
-using Qkmaxware.Measurement;
-
-namespace Qkmaxware.Astro.Celestia {
-    
-public static partial class StarCatalogue {
-    public static IEnumerable<Star> " + uniqueCatalogueName + @" => Array.AsReadOnly(stars" + uniqueCatalogueName + @");
-    private static Star[] stars" + uniqueCatalogueName + @" {
-        get {
-            // Lazy rebuild of this object set (makes initialization faster if not using this catalogue)
-            if (_stars" + uniqueCatalogueName + @" == null)
-                _stars" + uniqueCatalogueName + @" = buildStars" + uniqueCatalogueName + @"();
-            return _stars" + uniqueCatalogueName + @";
-        }
-    }
-    private static Star[] _stars" + uniqueCatalogueName + @";
-    private static Star[] buildStars" + uniqueCatalogueName + @"() => new Star[]{"
-                );
-
-                // Data
-                var first = true;
-                foreach (var star in stars.OrderBy(s => s.Value.primary)) {
-                    if (!first) {
-                        writer.Write(',');
-                    } else {
-                        first = false;
-                    }
-                    writer.WriteLine($"new Star(");
-                    writer.WriteLine($"    primaryId: \"{star.Key}\",");
-                    writer.WriteLine($"    secondaryIds: new Dictionary<string,string>{{");
-                    foreach (var idPair in star.Value.secondaries) {
-                        writer.WriteLine($"        {{\"{idPair.Key}\", \"{idPair.Value}\"}},");
-                    }
-                    writer.WriteLine($"    }},");
-                    writer.WriteLine($"    visualMagnitude: {star.Value.vmag},");
-                    writer.WriteLine($"    bvColour: {star.Value.bv},");
-                    if (!string.IsNullOrEmpty(star.Value.raDegrees) && !string.IsNullOrEmpty(star.Value.decDegrees)) {
-                    writer.WriteLine($"    coordinates: new EquatorialCoordinate(");
-                    writer.WriteLine($"        ra:  Angle.Degrees({star.Value.raDegrees}),");
-                    writer.WriteLine($"        dec: Angle.Degrees({star.Value.decDegrees})");
-                    writer.WriteLine($"    ),");
-                    } else {
-                    writer.WriteLine($"    coordinates: new EquatorialCoordinate(");
-                    writer.WriteLine($"        ra:  Angle.HoursMinutesSeconds((int){star.Value.ra.hr}, (int){star.Value.ra.min}, {star.Value.ra.s}),");
-                    writer.WriteLine($"        dec: Angle.DegreesMinutesSeconds((int){star.Value.dec.hr}, (int){star.Value.dec.min}, {star.Value.dec.s})");
-                    writer.WriteLine($"    ),"); 
-                    }
-                    writer.WriteLine($"    motion: new ProperMotion(");
-                    writer.WriteLine($"        dra:  Angle.HoursMinutesSeconds(0, 0, {star.Value.raPmMasPerYr} / 1000),");      // conversion to arcseconds divide by 1000
-                    writer.WriteLine($"        ddec: Angle.DegreesMinutesSeconds(0, 0, {star.Value.decPmMasPerYr} / 1000),");
-                    writer.WriteLine($"        duration:  Duration.Seconds(31557600)");
-                    writer.WriteLine($"    )");
-                    writer.WriteLine($")");
-                }
-
-                // Footer
-                writer.WriteLine(
-@"    };
-}
-
-}"  
-                );
-            }
+            Console.Write("[Hipparcos] Emitting class...");
+            writeCsFiles("Stars", "Star.Catalogue", "StarCatalogue", uniqueCatalogueName, "Star", stars, EmitStar);
             Console.WriteLine("Done");
+        }
+
+        private static void EmitStar(TextWriter writer, EntityData data) {
+            writer.WriteLine($"new Star(");
+            writer.WriteLine($"    primaryId: \"{data.primary}\",");
+            writer.WriteLine($"    secondaryIds: new Dictionary<string,string>{{");
+            foreach (var idPair in data.secondaries) {
+                writer.WriteLine($"        {{\"{idPair.Key}\", \"{idPair.Value}\"}},");
+            }
+            writer.WriteLine($"    }},");
+            writer.WriteLine($"    visualMagnitude: {data.vmag},");
+            writer.WriteLine($"    bvColour: {data.bv},");
+            if (!string.IsNullOrEmpty(data.raDegrees) && !string.IsNullOrEmpty(data.decDegrees)) {
+            writer.WriteLine($"    coordinates: new EquatorialCoordinate(");
+            writer.WriteLine($"        ra:  Angle.Degrees({data.raDegrees}),");
+            writer.WriteLine($"        dec: Angle.Degrees({data.decDegrees})");
+            writer.WriteLine($"    ),");
+            } else {
+            writer.WriteLine($"    coordinates: new EquatorialCoordinate(");
+            writer.WriteLine($"        ra:  Angle.HoursMinutesSeconds((int){data.ra.hr}, (int){data.ra.min}, {data.ra.s}),");
+            writer.WriteLine($"        dec: Angle.DegreesMinutesSeconds((int){data.dec.hr}, (int){data.dec.min}, {data.dec.s})");
+            writer.WriteLine($"    ),"); 
+            }
+            writer.WriteLine($"    motion: new ProperMotion(");
+            writer.WriteLine($"        dra:  Angle.HoursMinutesSeconds(0, 0, {data.raPmMasPerYr} / 1000),");      // conversion to arcseconds divide by 1000
+            writer.WriteLine($"        ddec: Angle.DegreesMinutesSeconds(0, 0, {data.decPmMasPerYr} / 1000),");
+            writer.WriteLine($"        duration:  Duration.Seconds(31557600)");
+            writer.WriteLine($"    )");
+            writer.WriteLine($")");
         }
 
         private static void ExportDSOs(bool doOnly1 = false) {
@@ -342,7 +303,42 @@ public static partial class StarCatalogue {
             // Write out file
             var uniqueCatalogueName = "NGC";
             Console.Write("[NGC 2000] Emitting class...");
-            using (var writer = new StreamWriter(Path.Combine(outputPath, "DSOs", $"DeepSkyObject.Catalogue.{uniqueCatalogueName}.cs"))) {
+            writeCsFiles("DSOs", "DeepSkyObject.Catalogue", "DeepSkyObjectCatalogue", uniqueCatalogueName, "DeepSkyObject", dsos, EmitDso);
+            Console.WriteLine("Done");
+        }
+
+        private static void EmitDso(TextWriter writer, EntityData data) {
+            writer.WriteLine($"new DeepSkyObject(");
+            writer.WriteLine($"    primaryId: \"{data.primary}\",");
+            writer.WriteLine($"    secondaryIds: new Dictionary<string,string>{{");
+            foreach (var idPair in data.secondaries) {
+                writer.WriteLine($"        {{\"{idPair.Key}\", \"{idPair.Value}\"}},");
+            }
+            writer.WriteLine($"    }},");
+            writer.WriteLine($"    @class: {data.type},");
+            writer.WriteLine($"    apparentMagnitude: {data.amag},");
+            if (!string.IsNullOrEmpty(data.arcMinutes)) {
+            writer.WriteLine($"    diametre: Angle.HoursMinutesSeconds(0, 0, {data.arcMinutes} * 60),");
+            } else {
+            writer.WriteLine($"    diametre: null,");
+            }
+            writer.WriteLine($"    coordinates: new EquatorialCoordinate(");
+            writer.WriteLine($"        ra:  Angle.HoursMinutesSeconds((int){data.ra.hr}, (int){data.ra.min}, {data.ra.s}),");
+            writer.WriteLine($"        dec: Angle.DegreesMinutesSeconds((int){data.dec.hr}, (int){data.dec.min}, {data.dec.s})");
+            writer.WriteLine($"    )");
+            writer.WriteLine($")");
+        }
+
+        private static void writeCsFiles(string folder, string filename, string containerClass, string uniqueCatalogueName, string entityClass, Dictionary<string, EntityData> objects, Action<TextWriter, EntityData> entitySerializer) {
+            filename = filename + "." + uniqueCatalogueName;
+            var groupSize = 1000;
+            var objectCount = objects.Count;
+            var groups = objects.Values
+                        .Select((v, i) => new { Value = v, Index = i }) 
+                        .GroupBy(x => x.Index / groupSize).ToList();
+            var groupCount = groups.Count;
+            
+            using (var writer = new StreamWriter(Path.Combine(outputPath, folder, filename + ".cs"))) {
                 // Header
                 writer.WriteLine(
 @"using System;
@@ -353,58 +349,67 @@ using Qkmaxware.Measurement;
 
 namespace Qkmaxware.Astro.Celestia {
     
-public static partial class DeepSkyObjectCatalogue {
-    public static IEnumerable<DeepSkyObject> " + uniqueCatalogueName + @" => Array.AsReadOnly(dsos" + uniqueCatalogueName + @");
-    private static DeepSkyObject[] dsos" + uniqueCatalogueName + @" {
+public static partial class " + containerClass + @" {
+    
+    private static List<" + entityClass + @"> _" + uniqueCatalogueName + @" = null; 
+    public static IEnumerable<" + entityClass + @"> " + uniqueCatalogueName + @"{
         get {
-            // Lazy rebuild of this object set (makes initialization faster if not using this catalogue)
-            if (_dsos" + uniqueCatalogueName + @" == null)
-                _dsos" + uniqueCatalogueName + @" = buildDsos" + uniqueCatalogueName + @"();
-            return _dsos" + uniqueCatalogueName + @";
+            if (_" + uniqueCatalogueName + @" == null) {
+                _" + uniqueCatalogueName + @" = new List<" + entityClass + @">(" + objectCount + @");
+                _rebuild" + uniqueCatalogueName + @"();
+            }
+            return _" + uniqueCatalogueName + @".AsReadOnly();
         }
     }
-    private static DeepSkyObject[] _dsos" + uniqueCatalogueName + @";
-    private static DeepSkyObject[] buildDsos" + uniqueCatalogueName + @"() => new DeepSkyObject[]{"
-                );
-
-                // Data
-                var first = true;
-                foreach (var dso in dsos.OrderBy(s => s.Value.primary)) {
-                    if (!first) {
-                        writer.Write(',');
-                    } else {
-                        first = false;
-                    }
-                    writer.WriteLine($"new DeepSkyObject(");
-                    writer.WriteLine($"    primaryId: \"{dso.Key}\",");
-                    writer.WriteLine($"    secondaryIds: new Dictionary<string,string>{{");
-                    foreach (var idPair in dso.Value.secondaries) {
-                        writer.WriteLine($"        {{\"{idPair.Key}\", \"{idPair.Value}\"}},");
-                    }
-                    writer.WriteLine($"    }},");
-                    writer.WriteLine($"    @class: {dso.Value.type},");
-                    writer.WriteLine($"    apparentMagnitude: {dso.Value.amag},");
-                    if (!string.IsNullOrEmpty(dso.Value.arcMinutes)) {
-                    writer.WriteLine($"    diametre: Angle.HoursMinutesSeconds(0, 0, {dso.Value.arcMinutes} * 60),");
-                    } else {
-                    writer.WriteLine($"    diametre: null,");
-                    }
-                    writer.WriteLine($"    coordinates: new EquatorialCoordinate(");
-                    writer.WriteLine($"        ra:  Angle.HoursMinutesSeconds((int){dso.Value.ra.hr}, (int){dso.Value.ra.min}, {dso.Value.ra.s}),");
-                    writer.WriteLine($"        dec: Angle.DegreesMinutesSeconds((int){dso.Value.dec.hr}, (int){dso.Value.dec.min}, {dso.Value.dec.s})");
-                    writer.WriteLine($"    )");
-                    writer.WriteLine($")");
+    
+    private static void _rebuild" + uniqueCatalogueName + @"() {");
+                for (var i = 0; i < groupCount; i++) {
+                    writer.WriteLine("_add" + uniqueCatalogueName + "_" + i + "();");
                 }
 
                 // Footer
                 writer.WriteLine(
-@"    };
+@"  }
 }
 
 }"  
                 );
             }
-            Console.WriteLine("Done");
+
+            for (var i = 0; i < groupCount; i++) {
+            var group = groups[i];
+            using (var writer = new StreamWriter(Path.Combine(outputPath, folder, filename + ".index" + i + ".cs"))) {
+                // Header
+                writer.WriteLine(
+@"using System;
+using System.Linq;
+using System.Collections.Generic;
+using Qkmaxware.Astro.Coordinates;
+using Qkmaxware.Measurement;
+
+namespace Qkmaxware.Astro.Celestia {
+    
+public static partial class " + containerClass + @" {"
+                );
+                writer.WriteLine("private static void _add" + uniqueCatalogueName + "_" + i + "() {");
+
+                // Data
+                foreach (var entity in group) {
+                    writer.WriteLine("_" + uniqueCatalogueName + ".Add(");
+                    entitySerializer.Invoke(writer, entity.Value);
+                    writer.WriteLine(");");
+                }
+
+                writer.WriteLine("}");
+
+                // Footer
+                writer.WriteLine(
+@"}
+
+}"  
+                );
+            }
+            }
         }
 
         private static (string hr, string min, string s) ParseHMS(string data) {
