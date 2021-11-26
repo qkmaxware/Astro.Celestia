@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <PackageId>Qkmaxware.Astro.Celestia</PackageId>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
     <Authors>Colin Halseth</Authors>
     <PackageTags>astronomical;coodinate;reference frame</PackageTags>
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Qkmaxware.Astro.Coordinates" Version="1.0.0" />
+    <PackageReference Include="Qkmaxware.Astro.Coordinates" Version="*" />
   </ItemGroup>
 
 </Project>
